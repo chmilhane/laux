@@ -11,8 +11,6 @@ export default class MatchStatement {
     const node = this.node;
     const g = this.generator;
 
-    // console.log(node);
-
     if (node.inParens) {
       g.token("(");
     }
@@ -38,6 +36,21 @@ export default class MatchStatement {
 
     const body = node.body.filter(v => v != undefined);
     const defaultExpr = body.find(expr => expr.isDefaultExpression);
+
+    if (body.find(expression => expression.type === "MatchConditonalMemberStatement")) {
+      g.token("\t");
+      g.word("assert");
+      g.token("(");
+      g.word("type(_laux__match_statement_value)");
+      g.space();
+      g.token("==");
+      g.space();
+      g.word("\"table\"")
+      g.token(",");
+      g.space();
+      g.word("\"Conditional members require a table as input value\"");
+      g.token(")");
+    }
 
     for (let i = 0; i < body.length; i++) {
       const expr = body[i];
@@ -71,6 +84,8 @@ export default class MatchStatement {
         g.token("\n");
         g.token("\t");
         g.token("\t");
+        g.word("return");
+        g.space();
         g.print(expr.expression.right);
         g.token("\n");
         g.token("\t");

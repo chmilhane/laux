@@ -122,7 +122,130 @@ export default class CodeGenerator {
     },
 
     MatchStatement(node) {
-      return new MatchStatement(this, node).generate();
+      if (node.inParens) {
+        this.token("(");
+      }
+  
+      this.token("(");
+      this.word("function");
+      this.token("(");
+      this.token(")");
+  
+      // temp
+      this.space();
+      this.token("\n");
+      this.token("\t");
+  
+      this.word("local");
+      this.space();
+      this.word("_laux__match_statement_value");
+      this.space();
+      this.token("=");
+      this.space();
+      this.print(node.identifier);
+      this.token("\n"); // temp
+  
+      const body = node.body.filter(v => v != undefined);
+      const defaultExpr = body.find(expr => expr.isDefaultExpression);
+  
+      if (body.find(expression => expression.type === "MatchConditonalMemberStatement")) {
+        this.token("\t");
+        this.word("assert");
+        this.token("(");
+        this.word("type(_laux__match_statement_value)");
+        this.space();
+        this.token("==");
+        this.space();
+        this.word("\"table\"")
+        this.token(",");
+        this.space();
+        this.word("\"Conditional members require a table as input value\"");
+        this.token(")");
+      }
+  
+      for (let i = 0; i < body.length; i++) {
+        const expr = body[i];
+        if (expr === defaultExpr) continue;
+  
+        if (expr.type === "MatchConditonalMemberStatement") {
+          for (let j = 0; j < expr.parameters.length; j++) {
+            this.token("\t");
+            this.word("local");
+            this.space();
+            this.token("_");
+            this.token(",");
+            this.space();
+            this.word(expr.parameters[j].name);
+            this.space();
+            this.token("=");
+            this.space();
+            this.word(`next(_laux__match_statement_value${j > 0 ? `, ${j}` : ""})`);
+            this.token("\n");
+          }
+  
+          this.token("\t");
+          this.word("if");
+          this.space();
+          this.token("(");
+          this.print(expr.expression.left);
+          this.token(")");
+          this.space();
+          this.word("then");
+          this.token("\n");
+          this.token("\t");
+          this.token("\t");
+          this.word("return");
+          this.space();
+          this.print(expr.expression.right);
+          this.token("\n");
+          this.token("\t");
+          this.word("end");
+        } else {
+          this.token("\t");
+          this.word("if");
+          this.space();
+          this.token("(");
+          this.word("_laux__match_statement_value");
+          this.space();
+          this.token("==");
+          this.space();
+          this.print(expr.left);
+          this.token(")");
+          this.space();
+          this.word("then");
+          this.token("\n");
+          this.token("\t");
+          this.token("\t");
+          this.word("return");
+          this.space();
+          this.print(expr.right);
+          this.token("\n")
+          this.token("\t");
+          this.word("end");
+        }
+  
+        if (i < body.length - (defaultExpr && 2 || 1)) this.token("\n");
+      }
+
+      if (defaultExpr) {
+        this.token("\n");
+        this.token("\t");
+        this.word("return");
+        this.space();
+        this.print(defaultExpr.right);
+      }
+  
+      this.token("\n");
+      this.word("end");
+      this.token(")");
+      this.token("(");
+      this.token(")");
+      // this.token("(");
+      // this.token(")");
+  
+      if (node.inParens) {
+        this.token(")");
+      }
     },
 
     WhileStatement(node) {
@@ -528,10 +651,6 @@ export default class CodeGenerator {
     },
     AwaitStatement(node) {
       this.word("awaitOutput()")
-    },
-
-    MatchExpression(node) {
-      return new MatchStatement(this, node).generate();
     }
   }
 
