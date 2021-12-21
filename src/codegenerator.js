@@ -6,8 +6,6 @@ import Buffer from "./buffer";
 import Whitespace from "./whitespace";
 import NodePath from "./path";
 
-import MatchStatement from "./statements/match";
-
 function commaSeparator() {
   this.token(",");
   this.space();
@@ -133,7 +131,7 @@ export default class CodeGenerator {
   
       // temp
       this.space();
-      this.token("\n");
+      this.newline();
       this.token("\t");
   
       this.word("local");
@@ -143,99 +141,219 @@ export default class CodeGenerator {
       this.token("=");
       this.space();
       this.print(node.identifier);
-      this.token("\n"); // temp
+      this.newline(); // temp
   
       const body = node.body.filter(v => v != undefined);
       const defaultExpr = body.find(expr => expr.isDefaultExpression);
-  
-      if (body.find(expression => expression.type === "MatchConditonalMemberStatement")) {
+
+      const printRightNode = (node) => {
+        if (node && node.type === "DoStatement") {
+          if (node.body.length) {
+            this.indent();
+            this.newline();
+            this.printSequence(node.body, { indent: true });
+            this.dedent();
+          }
+
+          return;
+        }
+
         this.token("\t");
-        this.word("assert");
-        this.token("(");
-        this.word("type(_laux__match_statement_value)");
+        this.token("\t");
+        this.word("return");
         this.space();
-        this.token("==");
-        this.space();
-        this.word("\"table\"")
-        this.token(",");
-        this.space();
-        this.word("\"Conditional members require a table as input value\"");
-        this.token(")");
+        this.print(node);
+        this.newline();
       }
-  
+
+      // if (body.find(expression => expression.type === "MatchConditonalMemberStatement")) {
+      //   this.token("\t");
+      //   this.word("assert");
+      //   this.token("(");
+      //   this.word("type(_laux__match_statement_value)");
+      //   this.space();
+      //   this.token("==");
+      //   this.space();
+      //   this.word("\"table\"")
+      //   this.token(",");
+      //   this.space();
+      //   this.word("\"Conditional members require a table as input value\"");
+      //   this.token(")");
+      // }
+
       for (let i = 0; i < body.length; i++) {
         const expr = body[i];
         if (expr === defaultExpr) continue;
-  
-        if (expr.type === "MatchConditonalMemberStatement") {
-          for (let j = 0; j < expr.parameters.length; j++) {
+
+        switch (true) {
+          case (expr.type === "MatchConditonalMemberStatement"):
+            if (null == expr.parameters.type) {
+              for (let j = 0; j < expr.parameters.length; j++) {
+                this.token("\t");
+                this.word("local");
+                this.space();
+                this.token("_");
+                this.token(",");
+                this.space();
+                this.word(expr.parameters[j].name);
+                this.space();
+                this.token("=");
+                this.space();
+                this.word(`next(_laux__match_statement_value${j > 0 ? `, ${j}` : ""})`);
+                this.newline();
+              }
+            } else {
+              this.token("\t");
+              this.word("local");
+              this.space();
+              this.word(expr.parameters.name);
+              this.space();
+              this.token("=");
+              this.space();
+              this.word("_laux__match_statement_value");
+              this.newline();
+            }
+
             this.token("\t");
-            this.word("local");
+            this.word("if");
             this.space();
-            this.token("_");
-            this.token(",");
+            this.token("(");
+            this.print(expr.expression.left);
+            this.token(")");
             this.space();
-            this.word(expr.parameters[j].name);
+            this.word("then");
+            this.newline();
+            printRightNode(expr.expression.right);
+            this.token("\t");
+            this.word("end");
+
+            break;
+
+          case (expr.type === "BinaryExpression" && expr.operator === "or"):
+            this.token("\t");
+            this.word("if");
+            this.space();
+            this.token("(");
+
+            let orExpressions = [];
+
+            if (expr.right.left.value) {
+              orExpressions.push(expr.right.left);
+            }
+
+            let e = expr.left;
+            while (e.left) {
+              orExpressions.push(e.right);
+              e = e.left;
+            }
+
+            if (e.value) {
+              orExpressions.push(e);
+            }
+
+            orExpressions.forEach((expression, i) => {
+              this.word("_laux__match_statement_value");
+              this.space();
+              this.token("==");
+              this.space();
+              this.word(expression.value);
+
+              if (i < orExpressions.length - 1) {
+                this.space();
+                this.word("or");
+              }
+            });
+
+            this.token(")");
+            this.space();
+            this.word("then");
+            this.newline();
+            printRightNode(expr.right.right);
+            this.token("\t");
+            this.word("end");
+
+            break;
+
+          case (expr.type === "MatchForMemberStatement"):
+            this.token("\t");
+            this.word("for");
+            this.space();
+            this.word("_laux__match_statement_loop_value");
             this.space();
             this.token("=");
             this.space();
-            this.word(`next(_laux__match_statement_value${j > 0 ? `, ${j}` : ""})`);
-            this.token("\n");
-          }
-  
-          this.token("\t");
-          this.word("if");
-          this.space();
-          this.token("(");
-          this.print(expr.expression.left);
-          this.token(")");
-          this.space();
-          this.word("then");
-          this.token("\n");
-          this.token("\t");
-          this.token("\t");
-          this.word("return");
-          this.space();
-          this.print(expr.expression.right);
-          this.token("\n");
-          this.token("\t");
-          this.word("end");
-        } else {
-          this.token("\t");
-          this.word("if");
-          this.space();
-          this.token("(");
-          this.word("_laux__match_statement_value");
-          this.space();
-          this.token("==");
-          this.space();
-          this.print(expr.left);
-          this.token(")");
-          this.space();
-          this.word("then");
-          this.token("\n");
-          this.token("\t");
-          this.token("\t");
-          this.word("return");
-          this.space();
-          this.print(expr.right);
-          this.token("\n")
-          this.token("\t");
-          this.word("end");
+            this.print(expr.start);
+            this.token(",");
+            this.space();
+            this.print(expr.end.left);
+
+            if (expr.step) {
+              this.token(",");
+              this.space();
+              this.print(expr.step);
+            }
+
+            this.space();
+            this.word("do");
+            this.newline();
+            this.token("\t");
+            this.token("\t");
+            this.word("if");
+            this.space();
+            this.token("(");
+            this.word("_laux__match_statement_loop_value");
+            this.space();
+            this.token("==");
+            this.space();
+            this.word("_laux__match_statement_value");
+            this.token(")");
+            this.space();
+            this.word("then");
+            this.newline();
+            this.token("\t");
+            printRightNode(expr.end.right);
+            this.token("\t");
+            this.token("\t");
+            this.word("end");
+            this.newline();
+            this.token("\t");
+            this.word("end");
+
+            break;
+
+          default:
+            this.token("\t");
+            this.word("if");
+            this.space();
+            this.token("(");
+            this.word("_laux__match_statement_value");
+            this.space();
+            this.token("==");
+            this.space();
+            this.print(expr.left);
+            this.token(")");
+            this.space();
+            this.word("then");
+            this.newline();
+            printRightNode(expr.right);
+            this.token("\t");
+            this.word("end");
+
+            break;
         }
   
-        if (i < body.length - (defaultExpr && 2 || 1)) this.token("\n");
+        if (i < body.length - (defaultExpr && 2 || 1)) this.newline();
       }
 
       if (defaultExpr) {
-        this.token("\n");
+        this.newline();
         this.token("\t");
         this.word("return");
         this.space();
         this.print(defaultExpr.right);
       }
   
-      this.token("\n");
+      this.newline();
       this.word("end");
       this.token(")");
       this.token("(");

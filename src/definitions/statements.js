@@ -138,6 +138,12 @@ defineType("MatchConditonalMemberStatement", {
   aliases: [ "Statement", "Scopable", "Declaration" ]
 });
 
+defineType("MatchForMemberStatement", {
+  visitors: [ "identifier", "expression" ],
+  builder: [ "start", "end", "step" ],
+  aliases: [ "Statement", "Scopable", "Declaration" ]
+});
+
 defineType("ClassStatement", {
   visitors: [ "identifier", "parent", "constructor", "members", "methods" ],
   builder: [ "identifier", "parent", "body", "isPublic" ],

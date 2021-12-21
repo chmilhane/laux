@@ -1,0 +1,75 @@
+local pair = true
+match pair
+  (x, y) if x == y => print("These are twins"),
+  (x, y) if x + y == 0 => print("Antimatter, kaboom!"),
+  -- { 2, 3 } => print("ok"),
+  _ => print("No correlation...")
+end
+
+-- local function tellMeAbout(number)
+--   return match number
+--     1 => print("One!"),
+--     2 or 5 or 4 or 7 or 11 => print("This is a prime"),
+--     -- 13..=19 => print("A teen"),
+--     _ => print("Ain't special")
+--   end
+-- end
+
+-- tellMeAbout(11)
+
+-- public class Language
+--   private static DK = "dk"
+--   private static EN = "en"
+
+--   public convert(source, language)
+--     return match context:getLanguage() do
+--       Language.DK => source.Danish,
+--       Language.EN => source.English,
+--       _ => function()
+--         error("???")
+--       end
+--     end
+--   end
+-- end
+
+-- local test = {}
+-- function test:getLanguage(x)
+--   return x
+-- end
+
+-- local binary = match true do
+--   true => 1,
+--   false => 0
+-- end
+
+-- print(binary)
+
+local function tellMeAbout(number)
+  return match number
+    -- 1 => do
+    --   local str = "One!"
+    --   print(str)
+    -- end,
+    2 or 5 or 4 or 7 or 11 => print("This is a prime"),
+    -- 13, 19 => print("A teen"),
+    _ => print("Ain't special")
+  end
+end
+
+local number = 13
+
+(function() 
+	local _laux__match_statement_value = number
+	if (_laux__match_statement_value == 1) then
+		return print("One!")
+	end
+	if (_laux__match_statement_value == 11 or _laux__match_statement_value == 7 or _laux__match_statement_value == 5 or _laux__match_statement_value == 3 or _laux__match_statement_value == 2) then
+		return print("This is a prime")
+	end
+	for _laux__0 = 13, 19 do
+		if (_laux__0 == _laux__match_statement_value) then
+			return print("A teen")
+		end
+	end
+	return print("Ain't special")
+end)()

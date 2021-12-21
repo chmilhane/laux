@@ -60,6 +60,7 @@ function finishNode(node) {
   // Pop a `Marker` off the location-array and attach its location data.
   if (trackLocations) {
     var location = locations.pop();
+    if(!location) return node;
     location.complete();
     if (options.locations) node.loc = location.loc;
     if (options.ranges) node.range = location.range;
@@ -480,20 +481,35 @@ function parseMatchStatementLine() {
     }
 
     expect('if');
-    return b.matchConditonalMemberStatement(parameters, parseExpression());
+    return b.matchConditonalMemberStatement(parameters, parseExpectedExpression());
   }
 
-  return parseExpectedExpression();
+  // console.log( parseIdentifier() );
+
+  const expression = parseExpectedExpression();
+  if (consume("if")) {
+    return b.matchConditonalMemberStatement(expression, parseExpectedExpression());
+  }
+
+  if (expression.type != "BinaryExpression") {
+    expect(",");
+
+    var end = parseExpectedExpression();
+    var step = null; // consume(",") ? parseExpectedExpression() : null;
+
+    return b.matchForMemberStatement(expression, end, step);
+  }
+
+  return expression;
 }
 
 function parseMatchStatement() {
   var identifier = parseFunctionName();
   var body = [];
 
-  // if (identifier.indexer === ':') {
-  //   console.log( parseCallExpression(identifier) );
-  //   // identifier = parseCallExpression(identifier);
-  // }
+  if (identifier.indexer === ':' || identifier.indexer === '.') {
+    identifier = parseCallExpression(identifier);
+  }
 
   if ('end' !== token.value) {
     var defaultExpression = false;
@@ -506,10 +522,9 @@ function parseMatchStatement() {
     while (true) {
       expression = parseMatchStatementLine();
 
-      if (!defaultExpression && expression.left && expression.left.type === 'Identifier' && expression.left.name === '_') {
+      let compareExpr = expression.type === "MatchConditonalMemberStatement" ? expression.expression : expression;
+      if (!defaultExpression && compareExpr.left && compareExpr.left.type === 'Identifier' && compareExpr.left.name === '_') {
         defaultExpression = true;
-
-        expression.left.name = '_laux__match_default';
         expression.isDefaultExpression = true;
 
         body.push(expression);
@@ -521,7 +536,7 @@ function parseMatchStatement() {
       else break;
     }
 
-    consume(';'); // grammar tells us ; is optional here.
+    consume(";"); // grammar tells us ; is optional here.
   }
 
   expect('end');
@@ -1494,7 +1509,7 @@ function parseSubExpression(minPrecedence) {
     if ('^' === operator || '..' === operator) precedence--;
     next();
 
-    var right = parseSubExpression(precedence);
+    var right = parseSubExpression(precedence) // || parseDoStatement();
     if (null == right) raiseUnexpectedToken('<expression>', token);
     // Push in the marker created before the loop to wrap its entirety.
     if (trackLocations) locations.push(marker);
@@ -1811,6 +1826,11 @@ function parsePrimaryExpression() {
     next();
 
     return parseMatchStatement();
+  } else if (Keyword === type && 'do' === value) {
+    pushLocation(marker);
+    next();
+
+    return parseDoStatement();
   } else if (Keyword === type && 'function' === value) {
     pushLocation(marker);
     next();

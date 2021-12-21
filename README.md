@@ -237,3 +237,28 @@ end
 
 There is no ipairs equivalent of this.
 
+## Match statement
+
+```lua
+local number = 13;
+
+match number
+    -- Match a single value
+    1 => print("One!"),
+    -- Match several values
+    2 or 3 or 5 or 7 or 11 => print("This is a prime"),
+    -- Match an inclusive range
+    13..=19 => print("A teen"),
+    -- Handle the rest of cases
+    _ => print("Ain't special")
+end
+
+local boolean = true
+-- Match is an expression too
+local binary = match boolean
+    false => 0,
+    true => 1
+end
+
+print(`§{boolean} -> §{binary}`)
+```
