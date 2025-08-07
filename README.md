@@ -1,6 +1,6 @@
 # LAUX compiler
 
-**Note:** This is a fork of a fork — the original project is called LAU. Now I forked "LAUX" it from my friend Patrick Ratzow, who had abandoned it, with the intention of extending the language.
+**Note:** This is a fork of a fork — the original project is called LAU. Now I forked "LAUX" from my friend Patrick Ratzow, who had abandoned it, with the intention of extending the language.
 My main goal was to add a match statement to Lua’s syntax. I believe this GitHub version only includes that one addition, though I might have a more complete version with extra features somewhere on an old computer.
 
 This is a fork of LAU made by [Metamist (Alexander Arvidsson)](https://github.com/alexanderarvidsson). 
